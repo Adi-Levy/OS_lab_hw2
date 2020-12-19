@@ -1,6 +1,7 @@
-#include "include/linux/highscore_chleague.h"
 #include <linux/kernel.h>
 #include <linux/sched.h>
+
+#include "linux/league.h"
 
 int sys_highscore_chleague(pid_t pid){
     printk("sys_highscore_chleague");
@@ -16,7 +17,7 @@ int sys_highscore_chleague(pid_t pid){
 		}
         current->task_league = NULL;
     }
-    else if (pid == 0)
+    else if (pid == 0) // create new league
     {
         league new_league = init_league();
         if(!new_league) {
@@ -30,7 +31,7 @@ int sys_highscore_chleague(pid_t pid){
         }
         current->task_league = new_league;
     }
-    else
+    else // joid league
     {
         task_t *task = find_task_by_pid(pid);
         if(task->task_league == NULL) {

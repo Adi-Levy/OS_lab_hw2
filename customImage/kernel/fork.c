@@ -614,8 +614,10 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 		goto fork_out;
 
 	*p = *current;
+	
 	p->task_league = current->task_league;
 	p->task_league->ref_count++;
+	
 	p->tux_info = NULL;
 	p->cpus_allowed_mask &= p->cpus_allowed;
 
