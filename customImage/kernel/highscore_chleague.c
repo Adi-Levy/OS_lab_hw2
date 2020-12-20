@@ -9,7 +9,7 @@ int sys_highscore_chleague(pid_t pid){
     if (pid < 0) // leave league
     {
         if(current->task_league == NULL) {
-            return -ESRCH;
+            return 0;
         }
         current->task_league->ref_count--;
 		if(current->task_league->ref_count == 0) {
@@ -34,13 +34,15 @@ int sys_highscore_chleague(pid_t pid){
     else // joid league
     {
         task_t *task = find_task_by_pid(pid);
-        if(task->task_league == NULL) {
+        if(task == NULL || task->task_league == NULL) {
             return -ESRCH;
         }
-        current->task_league->ref_count--;
-		if(current->task_league->ref_count == 0) {
-			destroy_league(current->task_league);
-		}
+        if(current->task_league != NULL) {
+            current->task_league->ref_count--;
+            if(current->task_league->ref_count == 0) {
+                destroy_league(current->task_league);
+            }
+        }
         current->task_league = task->task_league;
         current->task_league->ref_count++;
     }

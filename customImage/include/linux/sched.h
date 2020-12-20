@@ -27,7 +27,8 @@ extern unsigned long event;
 #include <linux/securebits.h>
 #include <linux/fs_struct.h>
 #include <linux/low-latency.h>
-#include "league.h"
+
+#include "linux/league.h"
 
 struct exec_domain;
 

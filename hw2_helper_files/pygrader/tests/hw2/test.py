@@ -9,7 +9,7 @@ def test1():
 
 	pyHighscore.highscore_add("board", 5)
 	top10_scores = pyHighscore.highscore_list("board", 10)
-    	pyHighscore.highscore_chleague(-1)
+        pyHighscore.highscore_chleague(-1)
 	num_of_leagues = pyHighscore.highscore_leagues()
 
 

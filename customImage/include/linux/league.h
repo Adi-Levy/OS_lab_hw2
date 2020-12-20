@@ -20,8 +20,6 @@ typedef struct _league
     int ref_count;
 } *league;
 
-extern int league_count;
-
 league init_league(void);
 
 void destroy_league(league l);

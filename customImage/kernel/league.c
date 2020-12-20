@@ -1,11 +1,12 @@
 #include <linux/slab.h>
+#include <linux/kernel.h>
 #include "linux/league.h"
 
-league_count = 0;
+int league_count = 0;
 
 league init_league(void) {
     league l = (league)kmalloc(sizeof(struct _league), GFP_KERNEL);
-    if(l){
+    if(!l){
         return NULL;
     }
     l->ref_count = 1;
