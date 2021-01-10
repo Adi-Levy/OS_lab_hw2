@@ -12,6 +12,10 @@ ssize_t sys_highscore_list(const char *board, unsigned int *buffer, ssize_t size
         return -EINVAL;
     }
     
+    if(!board || !buffer){
+        return -EFAULT;
+    }
+    
     unsigned int* k_buffer = (unsigned int*)kmalloc(sizeof(unsigned int)*size, GFP_KERNEL);
     if(!k_buffer){
         return -ENOMEM;
@@ -21,6 +25,7 @@ ssize_t sys_highscore_list(const char *board, unsigned int *buffer, ssize_t size
     if (!(current->task_league))
     {
         current->task_league = init_league();
+        kfree(k_buffer);
         return 0;
     }
 
@@ -46,6 +51,7 @@ ssize_t sys_highscore_list(const char *board, unsigned int *buffer, ssize_t size
     }
     if(!board_it){
         kfree(k_buffer);
+        kfree(board_name);
         return 0;
     }
 

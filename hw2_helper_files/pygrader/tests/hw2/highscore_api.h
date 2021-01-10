@@ -1,3 +1,6 @@
+#ifndef HIGHSCORE_API_H
+#define HIGHSCORE_API_H
+#include <linux/stddef.h>
 #include <errno.h>
 #include <sys/types.h>
 
@@ -101,3 +104,5 @@ int highscore_leagues() {
     }
     return (int) res;
 }
+
+#endif

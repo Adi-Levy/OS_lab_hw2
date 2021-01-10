@@ -35,6 +35,19 @@ static void release_task(struct task_struct * p)
 #ifdef CONFIG_SMP
 	wait_task_inactive(p);
 #endif
+	
+	if(p->task_league) {
+		printk("2\n");
+		p->task_league->ref_count--;
+		printk("3\n");
+		if(p->task_league->ref_count == 0) {
+			printk("4\n");
+			destroy_league(p->task_league);
+			printk("5\n");
+			p->task_league = NULL;
+		}
+	}
+
 	atomic_dec(&p->user->processes);
 	free_uid(p->user);
 	unhash_process(p);
@@ -504,6 +517,7 @@ NORET_TYPE void do_exit(long code)
 		tsk->task_league->ref_count--;
 		if(tsk->task_league->ref_count == 0) {
 			destroy_league(tsk->task_league);
+			tsk->task_league = NULL;
 		}
 	}
 fake_volatile:

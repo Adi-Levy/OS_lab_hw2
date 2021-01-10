@@ -31,6 +31,7 @@ void destroy_league(league l) {
             }
             Board tmp_b = board_it;
             board_it = board_it->next;
+            kfree(tmp_b->name);
             kfree(tmp_b);
         }
         kfree(l);
