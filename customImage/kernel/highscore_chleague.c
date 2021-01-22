@@ -11,11 +11,12 @@ int sys_highscore_chleague(pid_t pid){
         if(current->task_league == NULL) {
             return 0;
         }
-        current->task_league->ref_count--;
-		if(current->task_league->ref_count == 0) {
-			destroy_league(current->task_league);
-		}
+        league tmp = current->task_league;
         current->task_league = NULL;
+        tmp->ref_count--;
+		if(tmp->ref_count == 0) {
+			destroy_league(tmp);
+		}
     }
     else if (pid == 0) // create new league
     {
@@ -46,5 +47,8 @@ int sys_highscore_chleague(pid_t pid){
         current->task_league = task->task_league;
         current->task_league->ref_count++;
     }
+
+    league_prio(current);
+    
     return 0;
 }

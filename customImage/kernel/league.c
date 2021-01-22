@@ -11,6 +11,7 @@ league init_league(void) {
     }
     l->ref_count = 1;
     l->board_list = NULL;
+    l->board_count = 0;
     
     league_count++;
 

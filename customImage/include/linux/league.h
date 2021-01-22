@@ -18,6 +18,7 @@ typedef struct _league
 {
     Board board_list;
     int ref_count;
+    int board_count;
 } *league;
 
 league init_league(void);

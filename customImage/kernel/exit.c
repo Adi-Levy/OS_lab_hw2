@@ -513,13 +513,19 @@ NORET_TYPE void do_exit(long code)
 	tsk->flags |= PF_EXITING;
 	del_timer_sync(&tsk->real_timer);
 
+	printk("do exit 1\n");
 	if(tsk->task_league) {
+		printk("do exit 2\n");
 		tsk->task_league->ref_count--;
 		if(tsk->task_league->ref_count == 0) {
+			printk("do exit 3\n");
 			destroy_league(tsk->task_league);
 			tsk->task_league = NULL;
+			printk("do exit 4\n");
 		}
+		printk("do exit 5\n");
 	}
+	printk("do exit 6\n");
 fake_volatile:
 #ifdef CONFIG_BSD_PROCESS_ACCT
 	acct_process(code);
