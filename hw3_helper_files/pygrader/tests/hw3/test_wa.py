@@ -402,10 +402,10 @@ def test17(): # error finding is only with log.
     pyHighscore.highscore_chleague(-1)
 
 if __name__ == "__main__":
-    # test1()
+    test1()
     # test2()
     # test3()
-    test4()
+    # test4()
     # test5()
     # test6()
     # test7()

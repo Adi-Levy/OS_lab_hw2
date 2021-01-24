@@ -151,7 +151,6 @@ static struct runqueue runqueues[NR_CPUS] __cacheline_aligned;
 #define task_rq(p)		cpu_rq((p)->cpu)
 #define cpu_curr(cpu)		(cpu_rq(cpu)->curr)
 #define rt_task(p)		((p)->prio < MAX_RT_PRIO && (p)->task_league == NULL)
-#define league_task(p)  ((p)->task_league != NULL)
 
 /*
  * Default context-switch locking:
@@ -250,32 +249,7 @@ static inline int effective_prio(task_t *p)
 		prio = MAX_RT_PRIO;
 	if (prio > MAX_PRIO-1)
 		prio = MAX_PRIO-1;
-
-	// new code for leagues
-	/*if(p->task_league != NULL){
-		prio -= 40;
-		prio -= p->task_league->board_count;
-		if(prio < 60)
-			prio = 60;
-	}*/
-
 	return prio;
-}
-
-void league_prio(task_t *p){
-	int prio;
-
-	if(p->task_league) {
-		prio = p->static_prio - 40 - p->task_league->board_count;
-		if(prio < 60){
-			prio = 60;
-		}
-	}
-	else{
-		prio = p->static_prio;
-	}
-
-	p->prio = prio;
 }
 
 static inline void activate_task(task_t *p, runqueue_t *rq)
@@ -283,9 +257,7 @@ static inline void activate_task(task_t *p, runqueue_t *rq)
 	unsigned long sleep_time = jiffies - p->sleep_timestamp;
 	prio_array_t *array = rq->active;
 
-	if(p->task_league) printk("activate task 1\n");
-
-	if (!rt_task(p) && !league_task(p) && sleep_time) {
+	if (!rt_task(p) && sleep_time) {
 		/*
 		 * This code gives a bonus to interactive tasks. We update
 		 * an 'average sleep time' value here, based on
@@ -293,27 +265,21 @@ static inline void activate_task(task_t *p, runqueue_t *rq)
 		 * the higher the average gets - and the higher the priority
 		 * boost gets as well.
 		 */
-		if(p->task_league) printk("activate task 2\n");
 		p->sleep_avg += sleep_time;
 		if (p->sleep_avg > MAX_SLEEP_AVG)
 			p->sleep_avg = MAX_SLEEP_AVG;
 		p->prio = effective_prio(p);
-		if(p->task_league) printk("activate task 3\n");
 	}
-	if(p->task_league) printk("activate task 4\n");
 	enqueue_task(p, array);
 	rq->nr_running++;
-	if(p->task_league) printk("activate task 5\n");
 }
 
 static inline void deactivate_task(struct task_struct *p, runqueue_t *rq)
 {
-	if(p->task_league) printk("deactivate task 1\n");
 	rq->nr_running--;
 	if (p->state == TASK_UNINTERRUPTIBLE)
 		rq->nr_uninterruptible++;
 	dequeue_task(p, p->array);
-	if(p->task_league) printk("deactivate task 2\n");
 	p->array = NULL;
 }
 
@@ -430,7 +396,7 @@ void wake_up_forked_process(task_t * p)
 	runqueue_t *rq = this_rq_lock();
 
 	p->state = TASK_RUNNING;
-	if (!rt_task(p) && !league_task(p)) {
+	if (!rt_task(p)) {
 		/*
 		 * We decrease the sleep average of forking parents
 		 * and children as well, to keep max-interactive tasks
@@ -748,6 +714,22 @@ static inline void idle_tick(void)
 		(jiffies - (rq)->expired_timestamp >= \
 			STARVATION_LIMIT * ((rq)->nr_running) + 1))
 
+
+static inline void league_prio(task_t *p){
+	if(p->array != NULL) {
+		dequeue_task(p, p->array);
+	}
+
+	p->prio = p->static_prio - 40 - p->task_league->board_count;
+	if(p->prio < 60){
+		p->prio = 60;
+	}
+	
+	if(p->array != NULL) {
+		enqueue_task(p, p->array);
+	}
+}
+
 /*
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
@@ -757,6 +739,7 @@ void scheduler_tick(int user_tick, int system)
 	int cpu = smp_processor_id();
 	runqueue_t *rq = this_rq();
 	task_t *p = current;
+	task_t *tsk;
 
 	if (p == rq->idle) {
 		if (local_bh_count(cpu) || local_irq_count(cpu) > 1)
@@ -794,7 +777,7 @@ void scheduler_tick(int user_tick, int system)
 		}
 		goto out;
 	}
-	if (unlikely(league_task(p))) {
+	if (unlikely(p->task_league != NULL)) {
 		/*
 		 * RR tasks need a special form of timeslice management.
 		 * FIFO tasks have no timeslices.
@@ -804,8 +787,21 @@ void scheduler_tick(int user_tick, int system)
 			p->first_time_slice = 0;
 			set_tsk_need_resched(p);
 
+			// update all other proccess
+			//write_lock(&tasklist_lock);
+			for_each_task(tsk) {
+				if(tsk->task_league != NULL && tsk->pid != current->pid){
+					league_prio(tsk);
+				}
+        	}
+			//write_unlock(&tasklist_lock);
+
 			/* put it at the end of the queue: */
 			dequeue_task(p, rq->active);
+			p->prio = p->static_prio - 40 - p->task_league->board_count;
+			if(p->prio < 60){
+				p->prio = 60;
+			}
 			enqueue_task(p, rq->active);
 		}
 		goto out;
@@ -903,22 +899,6 @@ pick_next_task:
 		rq->expired_timestamp = 0;
 	}
 
-	/*
-	// new code for blocking non league tasks
-	idx = sched_find_first_bit(array->bitmap);
-	// exp_idx
-	exp_idx = sched_find_first_bit(rq->expired->bitmap);
-	// idx > exp_idx
-	while(exp_idx < idx) {
-		// return all smaler idx to active
-		queue = rq->expired->queue + exp_idx;
-		exp_task = list_entry(queue->next, task_t, run_list);
-		dequeue_task(exp_task,rq->expired);
-		enqueue_task(exp_task,rq->active);
-		exp_idx = sched_find_first_bit(rq->expired->bitmap);
-	}
-	// end of new code
-	*/
 	idx = sched_find_first_bit(array->bitmap);
 	queue = array->queue + idx;
 	next = list_entry(queue->next, task_t, run_list);

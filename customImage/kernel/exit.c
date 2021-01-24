@@ -44,8 +44,8 @@ static void release_task(struct task_struct * p)
 			printk("4\n");
 			destroy_league(p->task_league);
 			printk("5\n");
-			p->task_league = NULL;
 		}
+		p->task_league = NULL;
 	}
 
 	atomic_dec(&p->user->processes);
@@ -513,19 +513,18 @@ NORET_TYPE void do_exit(long code)
 	tsk->flags |= PF_EXITING;
 	del_timer_sync(&tsk->real_timer);
 
-	printk("do exit 1\n");
 	if(tsk->task_league) {
 		printk("do exit 2\n");
 		tsk->task_league->ref_count--;
 		if(tsk->task_league->ref_count == 0) {
 			printk("do exit 3\n");
 			destroy_league(tsk->task_league);
-			tsk->task_league = NULL;
 			printk("do exit 4\n");
 		}
+		tsk->task_league = NULL;
 		printk("do exit 5\n");
+		//tsk->prio = tsk->static_prio;
 	}
-	printk("do exit 6\n");
 fake_volatile:
 #ifdef CONFIG_BSD_PROCESS_ACCT
 	acct_process(code);

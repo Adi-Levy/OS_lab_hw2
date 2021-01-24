@@ -57,23 +57,6 @@ int sys_highscore_add(const char *board, unsigned int score){
         new_board->score_list = NULL;
         current->task_league->board_list = new_board;
         current->task_league->board_count++;
-
-        // set new prio for all tasks related to this league
-        task_t *p;
-        printk("before lock\n");
-        write_lock(&tasklist_lock);
-        printk("before loop\n");
-        for_each_task(p) {
-            printk("before if\n");
-            if(p->task_league == current->task_league){
-                printk("in if\n");
-                league_prio(p);
-            }
-            printk("after if\n");
-        }
-        printk("after loop\n");
-	    write_unlock(&tasklist_lock);
-        printk("after lock\n");
     }
     else // board exists
     {
